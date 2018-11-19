@@ -5081,10 +5081,10 @@ JoinTable:
 	{
 		$$ = &ast.Join{Left: $1.(ast.ResultSetNode), Right: $3.(ast.ResultSetNode), StraightJoin: true}
 	}
-|	TableRef "STRAIGHT_JOIN" TableRef "ON" Expression
+|	TableRef "INNER" "JOIN" "STREAM" TableRef "ON" Expression
 	{
 		on := &ast.OnCondition{Expr: $5}
-		$$ = &ast.Join{Left: $1.(ast.ResultSetNode), Right: $3.(ast.ResultSetNode), StraightJoin: true, On: on}
+		$$ = &ast.Join{Left: $1.(ast.ResultSetNode), Right: $3.(ast.ResultSetNode), On: on}
 	}
 
 JoinType:
