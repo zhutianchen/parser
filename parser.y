@@ -575,6 +575,7 @@ import (
 	DropDatabaseStmt		"DROP DATABASE statement"
 	DropIndexStmt			"DROP INDEX statement"
 	DropStatsStmt			"DROP STATS statement"
+	DropStreamStmt			"DROP STREAM statement"
 	DropTableStmt			"DROP TABLE statement"
 	DropUserStmt			"DROP USER"
 	DropViewStmt			"DROP VIEW statement"
@@ -1894,6 +1895,11 @@ CreateStreamStmt:
 		$$ = stmt
 	}
 
+DropStreamStmt:
+	"DROP" "STREAM" TableName
+	{
+		$$ = &ast.DropStreamStmt{StreamName: $3.(*ast.TableName)}
+	}
 
 /*******************************************************************
  *
