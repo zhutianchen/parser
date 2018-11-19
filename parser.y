@@ -225,6 +225,7 @@ import (
 	starting		"STARTING"
 	straightJoin		"STRAIGHT_JOIN"
 	tableKwd		"TABLE"
+	streamKwd	"STREAM"
 	stored			"STORED"
 	terminated		"TERMINATED"
 	then			"THEN"
@@ -1871,6 +1872,20 @@ DatabaseOptionList:
 
 CreateTableStmt:
 	"CREATE" "TABLE" IfNotExists TableName TableElementListOpt CreateTableOptionListOpt PartitionOpt DuplicateOpt AsOpt CreateTableSelectOpt
+	{
+		stmt := $5.(*ast.CreateTableStmt)
+		stmt.Table = $4.(*ast.TableName)
+		stmt.IfNotExists = $3.(bool)
+		stmt.Options = $6.([]*ast.TableOption)
+		if $7 != nil {
+			stmt.Partition = $7.(*ast.PartitionOptions)
+		}
+		stmt.OnDuplicate = $8.(ast.OnDuplicateCreateTableSelectType)
+		stmt.Select = $10.(*ast.CreateTableStmt).Select
+		$$ = stmt
+	}
+|
+	"CREATE" "STREAM" IfNotExists TableName TableElementListOpt CreateTableOptionListOpt PartitionOpt DuplicateOpt AsOpt CreateTableSelectOpt
 	{
 		stmt := $5.(*ast.CreateTableStmt)
 		stmt.Table = $4.(*ast.TableName)
