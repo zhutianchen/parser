@@ -77,7 +77,7 @@ var actionMap = map[ActionType]string{
 	ActionRenameIndex:        "rename index",
 	ActionAddTablePartition:  "add partition",
 	ActionDropTablePartition: "drop table partition",
-	ActionCreateSteam: "create stream",
+	ActionCreateStream: "create stream",
 }
 
 // String return current ddl action in string
