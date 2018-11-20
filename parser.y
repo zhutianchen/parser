@@ -1890,7 +1890,7 @@ CreateStreamStmt:
 			Cols:           columnDefs,
 		}
 		stmt.StreamName = $3.(*ast.TableName)
-		stmt.StreamProperties = $9.([]*ast.Assignment{})
+		stmt.StreamProperties = $9.([]*ast.Assignment)
 		$$ = stmt
 	}
 

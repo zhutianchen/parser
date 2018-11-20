@@ -392,6 +392,46 @@ func (n *ColumnDef) Accept(v Visitor) (Node, bool) {
 	return v.Leave(n)
 }
 
+
+// CreateStreamStmt is a statement to create a table.
+type CreateStreamStmt struct {
+	ddlNode
+
+	StreamName  *TableName
+	Cols        []*ColumnDef
+	StreamProperties      []*Assignment
+}
+
+// Accept implements Node Accept interface.
+func (n *CreateStreamStmt) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	n = newNode.(*CreateStreamStmt)
+	node, ok := n.StreamName.Accept(v)
+	if !ok {
+		return n, false
+	}
+	n.StreamName = node.(*TableName)
+	for i, val := range n.Cols {
+		node, ok = val.Accept(v)
+		if !ok {
+			return n, false
+		}
+		n.Cols[i] = node.(*ColumnDef)
+	}
+	for i, val := range n.StreamProperties {
+		node, ok = val.Accept(v)
+		if !ok {
+			return n, false
+		}
+		n.StreamProperties[i] = node.(*Assignment)
+	}
+	return v.Leave(n)
+}
+
+
 // CreateTableStmt is a statement to create a table.
 // See https://dev.mysql.com/doc/refman/5.7/en/create-table.html
 type CreateTableStmt struct {
