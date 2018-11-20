@@ -6234,6 +6234,7 @@ Statement:
 |	CreateDatabaseStmt
 |	CreateIndexStmt
 |	CreateTableStmt
+|	CreateStreamStmt
 |	CreateViewStmt
 |	CreateUserStmt
 |	DoStmt
