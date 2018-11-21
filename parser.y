@@ -631,6 +631,8 @@ import (
 	ColumnNameListOptWithBrackets 	"column name list opt with brackets"
 	ColumnSetValue			"insert statement set value by column name"
 	ColumnSetValueList		"insert statement set value by column name list"
+    StreamProperty          "stream property"
+    StreamPropertiesList    "stream property list"
 	CompareOp			"Compare opcode"
 	ColumnOption			"column definition option"
 	ColumnOptionList		"column definition option list"
@@ -1874,7 +1876,7 @@ DatabaseOptionList:
  *******************************************************************/
 
 CreateStreamStmt:
-	"CREATE" "STREAM" TableName '(' TableElementList ')' "WITH" '(' ColumnSetValueList')'
+	"CREATE" "STREAM" TableName '(' TableElementList ')' "WITH" '(' StreamPropertiesList')'
 	{
 		tes := $5.([]interface {})
 		var columnDefs []*ast.ColumnDef
@@ -1890,7 +1892,7 @@ CreateStreamStmt:
 			Cols:           columnDefs,
 		}
 		stmt.StreamName = $3.(*ast.TableName)
-		stmt.StreamProperties = $9.([]*ast.Assignment)
+		stmt.StreamProperties = $9.([]*ast.StreamProperty)
 		$$ = stmt
 	}
 
@@ -3099,6 +3101,28 @@ ExprOrDefault:
 |	"DEFAULT"
 	{
 		$$ = &ast.DefaultExpr{}
+	}
+
+StreamProperty:
+	stringLit eq stringLit
+	{
+		$$ = &ast.StreamProperty{
+			K:	$1,
+			V:	$3,
+		}
+	}
+
+StreamPropertiesList:
+	{
+		$$ = []*ast.StreamProperty{}
+	}
+|	StreamProperty
+	{
+		$$ = []*ast.StreamProperty{$1.(*ast.StreamProperty)}
+	}
+|	StreamPropertiesList ',' StreamProperty
+	{
+		$$ = append($1.([]*ast.StreamProperty), $3.(*ast.StreamProperty))
 	}
 
 ColumnSetValue:
