@@ -1889,7 +1889,8 @@ CreateStreamStmt:
 		stmt := &ast.CreateStreamStmt{
 			Cols:           columnDefs,
 		}
-		stmt.StreamName = $3.(*ast.TableName)
+		tblName := $3.(*ast.TableName)
+		stmt.StreamName = &ast.StreamName{Schema: tblName.Schema, Name: tblName.Name}
 		stmt.StreamProperties = $9.([]*ast.Assignment)
 		$$ = stmt
 	}

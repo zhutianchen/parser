@@ -136,6 +136,34 @@ const ExtraHandleID = -1
 // ExtraHandleName is the name of ExtraHandle Column.
 var ExtraHandleName = NewCIStr("_tidb_rowid")
 
+
+// StreamInfo provides meta data describing a DB stream.
+type StreamInfo struct {
+	ID      int64  `json:"id"`
+	Name    CIStr  `json:"name"`
+	Charset string `json:"charset"`
+	Collate string `json:"collate"`
+	// Columns are listed in the order in which they appear in the schema.
+	Columns     []*ColumnInfo `json:"cols"`
+	State       SchemaState   `json:"state"`
+	Comment     string        `json:"comment"`
+	AutoIncID   int64         `json:"auto_inc_id"`
+	MaxColumnID int64         `json:"max_col_id"`
+	MaxIndexID  int64         `json:"max_idx_id"`
+	// UpdateTS is used to record the timestamp of updating the table's schema information.
+	// These changing schema operations don't include 'truncate table' and 'rename table'.
+	UpdateTS uint64 `json:"update_timestamp"`
+	// OldSchemaID :
+	// Because auto increment ID has schemaID as prefix,
+	// We need to save original schemaID to keep autoID unchanged
+	// while renaming a table from one database to another.
+	// TODO: Remove it.
+	// Now it only uses for compatibility with the old version that already uses this field.
+	OldSchemaID int64 `json:"old_schema_id,omitempty"`
+
+	Properties map[string]string `json:"properties,omitempty"`
+}
+
 // TableInfo provides meta data describing a DB table.
 type TableInfo struct {
 	ID      int64  `json:"id"`

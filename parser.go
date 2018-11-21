@@ -7682,7 +7682,8 @@ yynewstate:
 			stmt := &ast.CreateStreamStmt{
 				Cols: columnDefs,
 			}
-			stmt.StreamName = yyS[yypt-7].item.(*ast.TableName)
+			tblName := yyS[yypt-7].item.(*ast.TableName)
+			stmt.StreamName = &ast.StreamName{Schema: tblName.Schema, Name: tblName.Name}
 			stmt.StreamProperties = yyS[yypt-1].item.([]*ast.Assignment)
 			parser.yyVAL.statement = stmt
 		}
