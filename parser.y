@@ -405,6 +405,7 @@ import (
 	some 		"SOME"
 	global		"GLOBAL"
 	tables		"TABLES"
+	streams		"STREAMS"
 	tablespace	"TABLESPACE"
 	temporary	"TEMPORARY"
 	temptable	"TEMPTABLE"
@@ -6026,6 +6027,14 @@ ShowTargetFilterable:
 	{
 		$$ = &ast.ShowStmt{
 			Tp:	ast.ShowTables,
+			DBName:	$3.(string),
+			Full:	$1.(bool),
+		}
+	}
+|	OptFull "STREAMS" ShowDatabaseNameOpt
+	{
+		$$ = &ast.ShowStmt{
+			Tp:	ast.ShowStreams,
 			DBName:	$3.(string),
 			Full:	$1.(bool),
 		}
