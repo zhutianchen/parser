@@ -1889,8 +1889,8 @@ CreateStreamStmt:
 		stmt := &ast.CreateStreamStmt{
 			Cols:           columnDefs,
 		}
-		tblName := $3.(*ast.TableName)
-		stmt.StreamName = &ast.StreamName{Schema: tblName.Schema, Name: tblName.Name}
+		stmt.StreamName = $3.(*ast.TableName)
+		stmt.StreamName.IsStream = true
 		stmt.StreamProperties = $9.([]*ast.Assignment)
 		$$ = stmt
 	}
@@ -1917,6 +1917,7 @@ CreateTableStmt:
 	{
 		stmt := $5.(*ast.CreateTableStmt)
 		stmt.Table = $4.(*ast.TableName)
+		stmt.Table.IsStream = false
 		stmt.IfNotExists = $3.(bool)
 		stmt.Options = $6.([]*ast.TableOption)
 		if $7 != nil {
@@ -1928,11 +1929,13 @@ CreateTableStmt:
 	}
 |	"CREATE" "TABLE" IfNotExists TableName LikeTableWithOrWithoutParen
 	{
-		$$ = &ast.CreateTableStmt{
+		v := &ast.CreateTableStmt{
 			Table:          $4.(*ast.TableName),
 			ReferTable:	$5.(*ast.TableName),
 			IfNotExists:    $3.(bool),
 		}
+		v.Table.IsStream = false
+		$$ = v
 	}
 
 DefaultKwdOpt:

@@ -126,18 +126,6 @@ type TableName struct {
 }
 
 
-// StreamName represents a stream name.
-type StreamName struct {
-	node
-	resultSetNode
-
-	Schema model.CIStr
-	Name   model.CIStr
-
-	DBInfo    *model.DBInfo
-	StreamInfo *model.StreamInfo
-}
-
 // IndexHintType is the type for index hint use, ignore or force.
 type IndexHintType int
 
@@ -166,16 +154,6 @@ type IndexHint struct {
 	HintScope  IndexHintScope
 }
 
-
-// Accept implements Node Accept interface.
-func (n *StreamName) Accept(v Visitor) (Node, bool) {
-	newNode, skipChildren := v.Enter(n)
-	if skipChildren {
-		return v.Leave(newNode)
-	}
-	n = newNode.(*StreamName)
-	return v.Leave(n)
-}
 
 // Accept implements Node Accept interface.
 func (n *TableName) Accept(v Visitor) (Node, bool) {

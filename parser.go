@@ -7682,8 +7682,8 @@ yynewstate:
 			stmt := &ast.CreateStreamStmt{
 				Cols: columnDefs,
 			}
-			tblName := yyS[yypt-7].item.(*ast.TableName)
-			stmt.StreamName = &ast.StreamName{Schema: tblName.Schema, Name: tblName.Name}
+			stmt.StreamName = yyS[yypt-7].item.(*ast.TableName)
+			stmt.StreamName.IsStream = true
 			stmt.StreamProperties = yyS[yypt-1].item.([]*ast.Assignment)
 			parser.yyVAL.statement = stmt
 		}
@@ -7691,6 +7691,7 @@ yynewstate:
 		{
 			stmt := yyS[yypt-5].item.(*ast.CreateTableStmt)
 			stmt.Table = yyS[yypt-6].item.(*ast.TableName)
+			stmt.Table.IsStream = false
 			stmt.IfNotExists = yyS[yypt-7].item.(bool)
 			stmt.Options = yyS[yypt-4].item.([]*ast.TableOption)
 			if yyS[yypt-3].item != nil {
@@ -7702,11 +7703,13 @@ yynewstate:
 		}
 	case 158:
 		{
-			parser.yyVAL.statement = &ast.CreateTableStmt{
+			v := &ast.CreateTableStmt{
 				Table:       yyS[yypt-1].item.(*ast.TableName),
 				ReferTable:  yyS[yypt-0].item.(*ast.TableName),
 				IfNotExists: yyS[yypt-2].item.(bool),
 			}
+			v.Table.IsStream = false
+			parser.yyVAL.statement = v
 		}
 	case 161:
 		{
