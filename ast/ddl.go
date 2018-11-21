@@ -528,6 +528,28 @@ func (n *DropTableStmt) Accept(v Visitor) (Node, bool) {
 	return v.Leave(n)
 }
 
+
+type DropStreamStmt struct {
+	ddlNode
+	StreamName   *TableName
+}
+
+// Accept implements Node Accept interface.
+func (n *DropStreamStmt) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	n = newNode.(*DropStreamStmt)
+	val := n.StreamName
+	node, ok := val.Accept(v)
+	if !ok {
+		return n, false
+	}
+	n.StreamName = node.(*TableName)
+	return v.Leave(n)
+}
+
 // RenameTableStmt is a statement to rename a table.
 // See http://dev.mysql.com/doc/refman/5.7/en/rename-table.html
 type RenameTableStmt struct {

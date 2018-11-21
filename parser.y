@@ -576,6 +576,7 @@ import (
 	DropIndexStmt			"DROP INDEX statement"
 	DropStatsStmt			"DROP STATS statement"
 	DropTableStmt			"DROP TABLE statement"
+	DropStreamStmt			"DROP STREAM statement"
 	DropUserStmt			"DROP USER"
 	DropViewStmt			"DROP VIEW statement"
 	DeallocateStmt			"Deallocate prepared statement"
@@ -1894,6 +1895,13 @@ CreateStreamStmt:
 		stmt.StreamName = $3.(*ast.TableName)
 		stmt.StreamProperties = $9.([]*ast.StreamProperty)
 		$$ = stmt
+	}
+
+
+DropStreamStmt:
+	"DROP" "STREAM" TableName
+	{
+		$$ = &ast.DropStreamStmt{StreamName: $3.(*ast.TableName)}
 	}
 
 
@@ -6265,6 +6273,7 @@ Statement:
 |	DropDatabaseStmt
 |	DropIndexStmt
 |	DropTableStmt
+|	DropStreamStmt
 |	DropViewStmt
 |	DropUserStmt
 |	DropStatsStmt
