@@ -397,7 +397,7 @@ func (n *ColumnDef) Accept(v Visitor) (Node, bool) {
 type CreateStreamStmt struct {
 	ddlNode
 
-	StreamName  *TableName
+	StreamName  *StreamName
 	Cols        []*ColumnDef
 	StreamProperties      []*Assignment
 }
