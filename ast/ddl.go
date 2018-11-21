@@ -413,7 +413,7 @@ func (n *CreateStreamStmt) Accept(v Visitor) (Node, bool) {
 	if !ok {
 		return n, false
 	}
-	n.StreamName = node.(*TableName)
+	n.StreamName = node.(*StreamName)
 	for i, val := range n.Cols {
 		node, ok = val.Accept(v)
 		if !ok {

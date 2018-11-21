@@ -166,6 +166,17 @@ type IndexHint struct {
 	HintScope  IndexHintScope
 }
 
+
+// Accept implements Node Accept interface.
+func (n *StreamName) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	n = newNode.(*StreamName)
+	return v.Leave(n)
+}
+
 // Accept implements Node Accept interface.
 func (n *TableName) Accept(v Visitor) (Node, bool) {
 	newNode, skipChildren := v.Enter(n)
