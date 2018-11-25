@@ -44,6 +44,7 @@ var (
 	_ Node = &UnionSelectList{}
 	_ Node = &WildCardField{}
 	_ Node = &WindowSpec{}
+	_ Node = &StreamWindowSpec{}
 	_ Node = &PartitionByClause{}
 	_ Node = &FrameClause{}
 	_ Node = &FrameBound{}
@@ -480,6 +481,9 @@ type SelectStmt struct {
 	OrderBy *OrderByClause
 	// Limit is the limit clause.
 	Limit *Limit
+
+	StreamWindowSPec *StreamWindowSpec
+
 	// LockTp is the lock type
 	LockTp SelectLockType
 	// TableHints represents the table level Optimizer Hint for join type
@@ -572,6 +576,14 @@ func (n *SelectStmt) Accept(v Visitor) (Node, bool) {
 			return n, false
 		}
 		n.Limit = node.(*Limit)
+	}
+
+	if n.StreamWindowSPec != nil {
+		node, ok := n.StreamWindowSPec.Accept(v)
+		if !ok {
+			return n, false
+		}
+		n.StreamWindowSPec = node.(*StreamWindowSpec)
 	}
 
 	return v.Leave(n)
@@ -1052,6 +1064,41 @@ func (n *ShowStmt) Accept(v Visitor) (Node, bool) {
 	}
 	return v.Leave(n)
 }
+
+type StreamWindowSpec struct {
+	node
+	Type StreamWindowType
+	Size uint64
+	Unit ExprNode
+
+}
+
+
+// Accept implements Node Accept interface.
+func (n *StreamWindowSpec) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	n = newNode.(*StreamWindowSpec)
+	if n.Unit != nil {
+		node, ok := n.Unit.Accept(v)
+		if !ok {
+			return n, false
+		}
+		n.Unit = node.(ExprNode)
+	}
+	return v.Leave(n)
+}
+
+// FrameType is the type of window function frame.
+type StreamWindowType int
+
+const (
+	Tumbling = iota
+	Hopping
+	Session
+)
 
 // WindowSpec is the specification of a window.
 type WindowSpec struct {

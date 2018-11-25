@@ -261,6 +261,9 @@ import (
 	yearMonth		"YEAR_MONTH"
 	zerofill		"ZEROFILL"
 	natural			"NATURAL"
+	tumbling		"TUMBLING"
+	hopping			"HOPPING"
+	size		    "SIZE"
 
 	/* The following tokens belong to UnReservedKeyword. */
 	action		"ACTION"
@@ -2982,7 +2985,7 @@ identifier | UnReservedKeyword | NotKeywordToken | TiDBKeyword
 UnReservedKeyword:
  "ACTION" | "ASCII" | "AUTO_INCREMENT" | "AFTER" | "ALWAYS" | "AVG" | "BEGIN" | "BIT" | "BOOL" | "BOOLEAN" | "BTREE" | "BYTE" | "CLEANUP" | "CHARSET"
 | "COLUMNS" | "COMMIT" | "COMPACT" | "COMPRESSED" | "CONSISTENT" | "CURRENT" | "DATA" | "DATE" %prec lowerThanStringLitToken| "DATETIME" | "DAY" | "DEALLOCATE" | "DO" | "DUPLICATE"
-| "DYNAMIC"| "END" | "ENGINE" | "ENGINES" | "ENUM" | "ERRORS" | "ESCAPE" | "EXECUTE" | "FIELDS" | "FIRST" | "FIXED" | "FLUSH" | "FOLLOWING" | "FORMAT" | "FULL" |"GLOBAL"
+| "DYNAMIC"| "END" | "ENGINE" | "ENGINES" | "ENUM" | "ERRORS" | "ESCAPE" | "EXECUTE" | "FIELDS" | "FIRST" | "FIXED" | "FLUSH" | "FOLLOWING" | "FORMAT" | "FULL" |"GLOBAL" | "TUMBLING" | "HOPPING" | "SIZE"
 | "HASH" | "HOUR" | "LESS" | "LOCAL" | "LAST" | "NAMES" | "OFFSET" | "PASSWORD" %prec lowerThanEq | "PREPARE" | "QUICK" | "REDUNDANT"
 | "ROLLBACK" | "SESSION" | "SIGNED" | "SNAPSHOT" | "START" | "STATUS" | "SUBPARTITIONS" | "SUBPARTITION" | "TABLES" | "STREAMS"| "TABLESPACE" | "TEXT" | "THAN" | "TIME" %prec lowerThanStringLitToken
 | "TIMESTAMP" %prec lowerThanStringLitToken | "TRACE" | "TRANSACTION" | "TRUNCATE" | "UNBOUNDED" | "UNKNOWN" | "VALUE" | "WARNINGS" | "YEAR" | "MODE"  | "WEEK"  | "ANY" | "SOME" | "USER" | "IDENTIFIED"
@@ -4533,7 +4536,11 @@ SelectStmtFromTable:
 			st.Having = $6.(*ast.HavingClause)
 		}
 		if $7 != nil {
+		    if sw, ok := ($7.(*ast.StreamWindowSpec)); ok {
+		    } else {
+		    st.StreamWindowSpec = sw
 		    st.WindowSpecs = ($7.([]ast.WindowSpec))
+		    }
 		}
 		$$ = st
 	}
@@ -4604,6 +4611,14 @@ WindowClauseOptional:
 |	"WINDOW" WindowDefinitionList
 	{
 		$$ = $2.([]ast.WindowSpec)
+	}
+|	"WINDOW" "TUMBLING" '(' "SIZE" intLit TimeUnit ')'
+	{
+        $$ := &ast.StreamWindowSpec{
+            Type : ast.StreamWindowType(ast.Tumbling),
+            Size : getUint64FromNUM($5),
+            Unit: ast.NewValueExpr($6),
+        }
 	}
 
 WindowDefinitionList:
@@ -6159,6 +6174,7 @@ ShowLikeOrWhereOpt:
 	{
 		$$ = $2
 	}
+
 
 GlobalScope:
 	{
