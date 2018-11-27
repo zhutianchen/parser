@@ -169,6 +169,9 @@ type TableInfo struct {
 	Partition *PartitionInfo `json:"partition"`
 
 	Compression string `json:"compression"`
+
+	IsStream bool `json:"isStream"`
+	StreamProperties map[string]string `json:"streamProperties"`
 }
 
 // GetPartitionInfo returns the partition information.

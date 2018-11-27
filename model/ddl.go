@@ -50,6 +50,8 @@ const (
 	ActionRenameIndex        ActionType = 18
 	ActionAddTablePartition  ActionType = 19
 	ActionDropTablePartition ActionType = 20
+	ActionCreateStream       ActionType = 21
+	ActionDropStream       	ActionType = 22
 )
 
 // AddIndexStr is a string related to the operation of "add index".
@@ -76,6 +78,8 @@ var actionMap = map[ActionType]string{
 	ActionRenameIndex:        "rename index",
 	ActionAddTablePartition:  "add partition",
 	ActionDropTablePartition: "drop table partition",
+	ActionCreateStream: "create stream",
+	ActionDropStream: "drop stream",
 }
 
 // String return current ddl action in string

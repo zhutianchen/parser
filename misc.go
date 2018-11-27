@@ -458,6 +458,7 @@ var tokenMap = map[string]int{
 	"STDDEV_SAMP":              stddevSamp,
 	"STORED":                   stored,
 	"STRAIGHT_JOIN":            straightJoin,
+	"STREAM":            		   streamKwd,
 	"SUBDATE":                  subDate,
 	"SUBPARTITION":             subpartition,
 	"SUBPARTITIONS":            subpartitions,
@@ -467,6 +468,7 @@ var tokenMap = map[string]int{
 	"SUPER":                    super,
 	"TABLE":                    tableKwd,
 	"TABLES":                   tables,
+	"STREAMS":                  streams,
 	"TABLESPACE":               tablespace,
 	"TEMPORARY":                temporary,
 	"TEMPTABLE":                temptable,
@@ -529,6 +531,9 @@ var tokenMap = map[string]int{
 	"YEAR":                     yearType,
 	"YEAR_MONTH":               yearMonth,
 	"ZEROFILL":                 zerofill,
+	"TUMBLING":                 tumbling,
+	"HOPPING":                  hopping,
+	"SIZE":                 	   size,
 }
 
 // See https://dev.mysql.com/doc/refman/5.7/en/function-resolution.html for details
@@ -583,6 +588,7 @@ var windowFuncTokenMap = map[string]int{
 	"ROWS":         rows,
 	"ROW_NUMBER":   rowNumber,
 	"WINDOW":       window,
+	"SWINDOW":      swindow,
 }
 
 // aliases are strings directly map to another string and use the same token.

@@ -225,6 +225,7 @@ import (
 	starting		"STARTING"
 	straightJoin		"STRAIGHT_JOIN"
 	tableKwd		"TABLE"
+	streamKwd	"STREAM"
 	stored			"STORED"
 	terminated		"TERMINATED"
 	then			"THEN"
@@ -260,6 +261,9 @@ import (
 	yearMonth		"YEAR_MONTH"
 	zerofill		"ZEROFILL"
 	natural			"NATURAL"
+	tumbling		"TUMBLING"
+	hopping			"HOPPING"
+	size		    "SIZE"
 
 	/* The following tokens belong to UnReservedKeyword. */
 	action		"ACTION"
@@ -404,6 +408,7 @@ import (
 	some 		"SOME"
 	global		"GLOBAL"
 	tables		"TABLES"
+	streams		"STREAMS"
 	tablespace	"TABLESPACE"
 	temporary	"TEMPORARY"
 	temptable	"TEMPTABLE"
@@ -565,6 +570,7 @@ import (
 	BinlogStmt			"Binlog base64 statement"
 	CommitStmt			"COMMIT statement"
 	CreateTableStmt			"CREATE TABLE statement"
+	CreateStreamStmt			"CREATE STREAM statement"
 	CreateViewStmt			"CREATE VIEW  stetement"
 	CreateUserStmt			"CREATE User statement"
 	CreateDatabaseStmt		"Create Database Statement"
@@ -574,6 +580,7 @@ import (
 	DropIndexStmt			"DROP INDEX statement"
 	DropStatsStmt			"DROP STATS statement"
 	DropTableStmt			"DROP TABLE statement"
+	DropStreamStmt			"DROP STREAM statement"
 	DropUserStmt			"DROP USER"
 	DropViewStmt			"DROP VIEW statement"
 	DeallocateStmt			"Deallocate prepared statement"
@@ -629,6 +636,8 @@ import (
 	ColumnNameListOptWithBrackets 	"column name list opt with brackets"
 	ColumnSetValue			"insert statement set value by column name"
 	ColumnSetValueList		"insert statement set value by column name list"
+    StreamProperty          "stream property"
+    StreamPropertiesList    "stream property list"
 	CompareOp			"Compare opcode"
 	ColumnOption			"column definition option"
 	ColumnOptionList		"column definition option list"
@@ -1853,6 +1862,53 @@ DatabaseOptionList:
 		$$ = append($1.([]*ast.DatabaseOption), $2.(*ast.DatabaseOption))
 	}
 
+
+/*******************************************************************
+ *
+ *  Create Stream Statement
+ *
+ *  Example:
+ *  CREATE STREAM clicks (
+ *     user   VARCHAR,
+ *     cTime  TIMESTAMP,
+ *     url    VARCHAR
+ *   ) WITH (
+ *     type = 'kafka',
+ *     topic = 'click_topic',
+ *     ...
+ *  );
+ *
+ *******************************************************************/
+
+CreateStreamStmt:
+	"CREATE" "STREAM" TableName '(' TableElementList ')' "WITH" '(' StreamPropertiesList')'
+	{
+		tes := $5.([]interface {})
+		var columnDefs []*ast.ColumnDef
+		for _, te := range tes {
+			switch te := te.(type) {
+			case *ast.ColumnDef:
+				columnDefs = append(columnDefs, te)
+			default:
+			    panic("Only support ColumnDef in CREATE STREAM SYNTAX")
+			}
+		}
+		stmt := &ast.CreateStreamStmt{
+			Cols:           columnDefs,
+		}
+		stmt.StreamName = $3.(*ast.TableName)
+		stmt.StreamProperties = $9.([]*ast.StreamProperty)
+		$$ = stmt
+	}
+
+
+DropStreamStmt:
+	"DROP" "STREAM" TableName
+	{
+		$$ = &ast.DropStreamStmt{StreamName: $3.(*ast.TableName)}
+	}
+
+
 /*******************************************************************
  *
  *  Create Table Statement
@@ -2929,9 +2985,9 @@ identifier | UnReservedKeyword | NotKeywordToken | TiDBKeyword
 UnReservedKeyword:
  "ACTION" | "ASCII" | "AUTO_INCREMENT" | "AFTER" | "ALWAYS" | "AVG" | "BEGIN" | "BIT" | "BOOL" | "BOOLEAN" | "BTREE" | "BYTE" | "CLEANUP" | "CHARSET"
 | "COLUMNS" | "COMMIT" | "COMPACT" | "COMPRESSED" | "CONSISTENT" | "CURRENT" | "DATA" | "DATE" %prec lowerThanStringLitToken| "DATETIME" | "DAY" | "DEALLOCATE" | "DO" | "DUPLICATE"
-| "DYNAMIC"| "END" | "ENGINE" | "ENGINES" | "ENUM" | "ERRORS" | "ESCAPE" | "EXECUTE" | "FIELDS" | "FIRST" | "FIXED" | "FLUSH" | "FOLLOWING" | "FORMAT" | "FULL" |"GLOBAL"
+| "DYNAMIC"| "END" | "ENGINE" | "ENGINES" | "ENUM" | "ERRORS" | "ESCAPE" | "EXECUTE" | "FIELDS" | "FIRST" | "FIXED" | "FLUSH" | "FOLLOWING" | "FORMAT" | "FULL" |"GLOBAL" | "TUMBLING" | "HOPPING" | "SIZE"
 | "HASH" | "HOUR" | "LESS" | "LOCAL" | "LAST" | "NAMES" | "OFFSET" | "PASSWORD" %prec lowerThanEq | "PREPARE" | "QUICK" | "REDUNDANT"
-| "ROLLBACK" | "SESSION" | "SIGNED" | "SNAPSHOT" | "START" | "STATUS" | "SUBPARTITIONS" | "SUBPARTITION" | "TABLES" | "TABLESPACE" | "TEXT" | "THAN" | "TIME" %prec lowerThanStringLitToken 
+| "ROLLBACK" | "SESSION" | "SIGNED" | "SNAPSHOT" | "START" | "STATUS" | "SUBPARTITIONS" | "SUBPARTITION" | "TABLES" | "STREAMS"| "TABLESPACE" | "TEXT" | "THAN" | "TIME" %prec lowerThanStringLitToken
 | "TIMESTAMP" %prec lowerThanStringLitToken | "TRACE" | "TRANSACTION" | "TRUNCATE" | "UNBOUNDED" | "UNKNOWN" | "VALUE" | "WARNINGS" | "YEAR" | "MODE"  | "WEEK"  | "ANY" | "SOME" | "USER" | "IDENTIFIED"
 | "COLLATION" | "COMMENT" | "AVG_ROW_LENGTH" | "CONNECTION" | "CHECKSUM" | "COMPRESSION" | "KEY_BLOCK_SIZE" | "MASTER" | "MAX_ROWS"
 | "MIN_ROWS" | "NATIONAL" | "ROW_FORMAT" | "QUARTER" | "GRANTS" | "TRIGGERS" | "DELAY_KEY_WRITE" | "ISOLATION" | "JSON"
@@ -3057,6 +3113,28 @@ ExprOrDefault:
 |	"DEFAULT"
 	{
 		$$ = &ast.DefaultExpr{}
+	}
+
+StreamProperty:
+	stringLit eq stringLit
+	{
+		$$ = &ast.StreamProperty{
+			K:	$1,
+			V:	$3,
+		}
+	}
+
+StreamPropertiesList:
+	{
+		$$ = []*ast.StreamProperty{}
+	}
+|	StreamProperty
+	{
+		$$ = []*ast.StreamProperty{$1.(*ast.StreamProperty)}
+	}
+|	StreamPropertiesList ',' StreamProperty
+	{
+		$$ = append($1.([]*ast.StreamProperty), $3.(*ast.StreamProperty))
 	}
 
 ColumnSetValue:
@@ -4458,7 +4536,11 @@ SelectStmtFromTable:
 			st.Having = $6.(*ast.HavingClause)
 		}
 		if $7 != nil {
+		    if sw, ok := ($7.(*ast.StreamWindowSpec)); ok {
+		    } else {
+		    st.StreamWindowSpec = sw
 		    st.WindowSpecs = ($7.([]ast.WindowSpec))
+		    }
 		}
 		$$ = st
 	}
@@ -4529,6 +4611,14 @@ WindowClauseOptional:
 |	"WINDOW" WindowDefinitionList
 	{
 		$$ = $2.([]ast.WindowSpec)
+	}
+|	"WINDOW" "TUMBLING" '(' "SIZE" intLit TimeUnit ')'
+	{
+        $$ := &ast.StreamWindowSpec{
+            Type : ast.StreamWindowType(ast.Tumbling),
+            Size : getUint64FromNUM($5),
+            Unit: ast.NewValueExpr($6),
+        }
 	}
 
 WindowDefinitionList:
@@ -5956,6 +6046,14 @@ ShowTargetFilterable:
 			Full:	$1.(bool),
 		}
 	}
+|	OptFull "STREAMS" ShowDatabaseNameOpt
+	{
+		$$ = &ast.ShowStmt{
+			Tp:	ast.ShowStreams,
+			DBName:	$3.(string),
+			Full:	$1.(bool),
+		}
+	}
 |	"TABLE" "STATUS" ShowDatabaseNameOpt
 	{
 		$$ = &ast.ShowStmt{
@@ -6077,6 +6175,7 @@ ShowLikeOrWhereOpt:
 		$$ = $2
 	}
 
+
 GlobalScope:
 	{
 		$$ = false
@@ -6192,12 +6291,14 @@ Statement:
 |	CreateDatabaseStmt
 |	CreateIndexStmt
 |	CreateTableStmt
+|	CreateStreamStmt
 |	CreateViewStmt
 |	CreateUserStmt
 |	DoStmt
 |	DropDatabaseStmt
 |	DropIndexStmt
 |	DropTableStmt
+|	DropStreamStmt
 |	DropViewStmt
 |	DropUserStmt
 |	DropStatsStmt
