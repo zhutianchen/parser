@@ -256,14 +256,12 @@ import (
 	where			"WHERE"
 	write			"WRITE"
 	window			"WINDOW"
+	swindow			"SWINDOW"
 	with			"WITH"
 	xor 			"XOR"
 	yearMonth		"YEAR_MONTH"
 	zerofill		"ZEROFILL"
 	natural			"NATURAL"
-	tumbling		"TUMBLING"
-	hopping			"HOPPING"
-	size		    "SIZE"
 
 	/* The following tokens belong to UnReservedKeyword. */
 	action		"ACTION"
@@ -432,6 +430,9 @@ import (
 	identSQLErrors	"ERRORS"
 	week		"WEEK"
 	yearType	"YEAR"
+	tumbling		"TUMBLING"
+	hopping			"HOPPING"
+	size			"SIZE"
 
 	/* The following tokens belong to NotKeywordToken. */
 	addDate			"ADDDATE"
@@ -4614,7 +4615,7 @@ WindowClauseOptional:
 	}
 |	"WINDOW" "TUMBLING" '(' "SIZE" intLit TimeUnit ')'
 	{
-        $$ := &ast.StreamWindowSpec{
+        $$ = &ast.StreamWindowSpec{
             Type : ast.StreamWindowType(ast.Tumbling),
             Size : getUint64FromNUM($5),
             Unit: ast.NewValueExpr($6),

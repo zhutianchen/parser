@@ -126,7 +126,6 @@ type TableName struct {
 	IndexHints []*IndexHint
 }
 
-
 // IndexHintType is the type for index hint use, ignore or force.
 type IndexHintType int
 
@@ -154,7 +153,6 @@ type IndexHint struct {
 	HintType   IndexHintType
 	HintScope  IndexHintScope
 }
-
 
 // Accept implements Node Accept interface.
 func (n *TableName) Accept(v Visitor) (Node, bool) {
@@ -482,7 +480,7 @@ type SelectStmt struct {
 	// Limit is the limit clause.
 	Limit *Limit
 
-	StreamWindowSPec *StreamWindowSpec
+	StreamWindowSpec *StreamWindowSpec
 
 	// LockTp is the lock type
 	LockTp SelectLockType
@@ -578,12 +576,12 @@ func (n *SelectStmt) Accept(v Visitor) (Node, bool) {
 		n.Limit = node.(*Limit)
 	}
 
-	if n.StreamWindowSPec != nil {
-		node, ok := n.StreamWindowSPec.Accept(v)
+	if n.StreamWindowSpec != nil {
+		node, ok := n.StreamWindowSpec.Accept(v)
 		if !ok {
 			return n, false
 		}
-		n.StreamWindowSPec = node.(*StreamWindowSpec)
+		n.StreamWindowSpec = node.(*StreamWindowSpec)
 	}
 
 	return v.Leave(n)
@@ -1070,9 +1068,7 @@ type StreamWindowSpec struct {
 	Type StreamWindowType
 	Size uint64
 	Unit ExprNode
-
 }
-
 
 // Accept implements Node Accept interface.
 func (n *StreamWindowSpec) Accept(v Visitor) (Node, bool) {
