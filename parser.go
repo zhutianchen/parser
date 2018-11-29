@@ -9898,8 +9898,8 @@ yynewstate:
 			}
 			if yyS[yypt-0].item != nil {
 				if sw, ok := (yyS[yypt-0].item.(*ast.StreamWindowSpec)); ok {
-				} else {
 					st.StreamWindowSpec = sw
+				} else {
 					st.WindowSpecs = (yyS[yypt-0].item.([]ast.WindowSpec))
 				}
 			}

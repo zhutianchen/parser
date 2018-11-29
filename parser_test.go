@@ -2557,6 +2557,7 @@ func (s *testParserSuite) TestWindowFunctions(c *C) {
 		{`SELECT FIRST_VALUE(year) OVER (w ORDER BY year ASC) AS first FROM sales WINDOW w AS (PARTITION BY country);`, true},
 		{`SELECT RANK() OVER w1 FROM t WINDOW w1 AS (w2), w2 AS (), w3 AS (w1);`, true},
 		{`SELECT RANK() OVER w1 FROM t WINDOW w1 AS (w2), w2 AS (w3), w3 AS (w1);`, true},
+		{`SELECT COUNT(*) FROM st group by a window tumbling ( size 5 SECOND);`, true},
 	}
 	s.enableWindowFunc = true
 	s.RunTest(c, table)

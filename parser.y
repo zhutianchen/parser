@@ -4538,9 +4538,9 @@ SelectStmtFromTable:
 		}
 		if $7 != nil {
 		    if sw, ok := ($7.(*ast.StreamWindowSpec)); ok {
+		        st.StreamWindowSpec = sw
 		    } else {
-		    st.StreamWindowSpec = sw
-		    st.WindowSpecs = ($7.([]ast.WindowSpec))
+		        st.WindowSpecs = ($7.([]ast.WindowSpec))
 		    }
 		}
 		$$ = st
