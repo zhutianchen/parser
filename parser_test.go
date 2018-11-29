@@ -1760,6 +1760,10 @@ func (s *testParserSuite) TestDDL(c *C) {
 
 		// for issue 5918
 		{"create table t (lv long varchar null)", true},
+
+		// for stream
+		{`create stream s(a int, b timestamp) with ('type' = 'kafka', 'topic' = 'click');`, true},
+		{`drop stream s`, true},
 	}
 	s.RunTest(c, table)
 }
