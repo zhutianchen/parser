@@ -995,6 +995,7 @@ const (
 	ShowPrivileges
 	ShowErrors
 	ShowStreams
+	ShowCreateStream
 )
 
 // ShowStmt is a statement to provide information about databases, tables, columns and so on.
@@ -1065,6 +1066,7 @@ func (n *ShowStmt) Accept(v Visitor) (Node, bool) {
 
 type StreamWindowSpec struct {
 	node
+	WinCol string
 	Type StreamWindowType
 	Size uint64
 	Unit ExprNode

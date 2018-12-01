@@ -5916,6 +5916,13 @@ ShowStmt:
 			Table:	$4.(*ast.TableName),
 		}
 	}
+|	"SHOW" "CREATE" "STREAM" TableName
+	{
+		$$ = &ast.ShowStmt{
+			Tp:	ast.ShowCreateStream,
+			Table:	$4.(*ast.TableName),
+		}
+	}
 |	"SHOW" "CREATE" "DATABASE" DBName
 	{
 		$$ = &ast.ShowStmt{
