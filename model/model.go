@@ -171,6 +171,7 @@ type TableInfo struct {
 	Compression string `json:"compression"`
 
 	IsStream bool `json:"isStream"`
+	StreamWinCol string `json:"streamWinCol"`
 	StreamProperties map[string]string `json:"streamProperties"`
 }
 
