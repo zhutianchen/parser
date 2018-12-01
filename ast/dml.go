@@ -1065,6 +1065,7 @@ func (n *ShowStmt) Accept(v Visitor) (Node, bool) {
 
 type StreamWindowSpec struct {
 	node
+	WinCol string
 	Type StreamWindowType
 	Size uint64
 	Unit ExprNode
