@@ -226,6 +226,7 @@ import (
 	smallIntType		"SMALLINT"
 	sql			"SQL"
 	sqlCalcFoundRows	"SQL_CALC_FOUND_ROWS"
+	ssl	            "SSL"
 	starting		"STARTING"
 	straightJoin		"STRAIGHT_JOIN"
 	tableKwd		"TABLE"
@@ -683,6 +684,7 @@ import (
 	DefaultTrueDistinctOpt		"Distinct option which defaults to true"
 	BuggyDefaultFalseDistinctOpt	"Distinct option which accepts DISTINCT ALL and defaults to false"
 	Enclosed			"Enclosed by"
+	EncryptConnOpt		"Encrypted connections options"
 	EqOpt				"= or empty"
 	EscapedTableRef 		"escaped table reference"
 	Escaped				"Escaped by"
@@ -7500,7 +7502,7 @@ CommaOpt:
  *  https://dev.mysql.com/doc/refman/5.7/en/account-management-sql.html
  ************************************************************************************/
 CreateUserStmt:
-	"CREATE" "USER" IfNotExists UserSpecList
+	"CREATE" "USER" IfNotExists UserSpecList EncryptConnOpt
 	{
  		// See https://dev.mysql.com/doc/refman/5.7/en/create-user.html
 		$$ = &ast.CreateUserStmt{
@@ -7563,6 +7565,15 @@ UserSpecList:
 	{
 		$$ = append($1.([]*ast.UserSpec), $3.(*ast.UserSpec))
 	}
+
+EncryptConnOpt:
+	{
+		$$ = nil
+    }
+|	"SSL"
+	{
+		$$ = nil
+    }
 
 AuthOption:
 	{
