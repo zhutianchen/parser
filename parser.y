@@ -212,6 +212,7 @@ import (
 	rename         		"RENAME"
 	repeat			"REPEAT"
 	replace			"REPLACE"
+	require			"REQUIRE"
 	restrict		"RESTRICT"
 	revoke			"REVOKE"
 	right			"RIGHT"
@@ -7570,7 +7571,7 @@ EncryptConnOpt:
 	{
 		$$ = nil
     }
-|	"SSL"
+|	"REQUIRE" "SSL"
 	{
 		$$ = nil
     }

@@ -2108,6 +2108,7 @@ func (s *testParserSuite) TestType(c *C) {
 func (s *testParserSuite) TestPrivilege(c *C) {
 	table := []testCase{
 		// for create user
+		{`CREATE USER 'ttt' REQUIRE SSL;`, true, "CREATE USER `ttt`@`%` REQUIRE SSL"},
 		{`CREATE USER 'test'`, true, "CREATE USER `test`@`%`"},
 		{`CREATE USER test`, true, "CREATE USER `test`@`%`"},
 		{"CREATE USER `test`", true, "CREATE USER `test`@`%`"},
