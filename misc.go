@@ -549,6 +549,7 @@ var tokenMap = map[string]int{
 	"WITH":                     with,
 	"WRITE":                    write,
 	"XOR":                      xor,
+	"X509":                     x509,
 	"YEAR":                     yearType,
 	"YEAR_MONTH":               yearMonth,
 	"ZEROFILL":                 zerofill,

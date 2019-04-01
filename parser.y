@@ -436,6 +436,7 @@ import (
 	identSQLErrors	"ERRORS"
 	week		"WEEK"
 	yearType	"YEAR"
+	x509	"X509"
 
 	/* The following tokens belong to NotKeywordToken. Notice: make sure these tokens are contained in NotKeywordToken. */
 	addDate			"ADDDATE"
@@ -7571,7 +7572,15 @@ EncryptConnOpt:
 	{
 		$$ = nil
     }
+|	"REQUIRE" "NONE"
+	{
+		$$ = nil
+    }
 |	"REQUIRE" "SSL"
+	{
+		$$ = nil
+    }
+|	"REQUIRE" "X509"
 	{
 		$$ = nil
     }
