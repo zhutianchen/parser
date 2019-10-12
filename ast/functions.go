@@ -16,7 +16,10 @@ package ast
 import (
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/pingcap/errors"
+	. "github.com/pingcap/parser/format"
 	"github.com/pingcap/parser/model"
 	"github.com/pingcap/parser/types"
 )
@@ -171,6 +174,7 @@ const (
 	Year             = "year"
 	YearWeek         = "yearweek"
 	LastDay          = "last_day"
+	TiDBParseTso     = "tidb_parse_tso"
 
 	// string functions
 	ASCII           = "ascii"
@@ -196,6 +200,7 @@ const (
 	MakeSet         = "make_set"
 	Mid             = "mid"
 	Oct             = "oct"
+	OctetLength     = "octet_length"
 	Ord             = "ord"
 	Position        = "position"
 	Quote           = "quote"
@@ -229,6 +234,7 @@ const (
 	Collation      = "collation"
 	ConnectionID   = "connection_id"
 	CurrentUser    = "current_user"
+	CurrentRole    = "current_role"
 	Database       = "database"
 	FoundRows      = "found_rows"
 	LastInsertId   = "last_insert_id"
@@ -315,6 +321,9 @@ const (
 	JSONDepth         = "json_depth"
 	JSONKeys          = "json_keys"
 	JSONLength        = "json_length"
+
+	// TiDB internal function.
+	TiDBDecodeKey = "tidb_decode_key"
 )
 
 // FuncCallExpr is for function expression.
@@ -324,6 +333,82 @@ type FuncCallExpr struct {
 	FnName model.CIStr
 	// Args is the function args.
 	Args []ExprNode
+}
+
+// Restore implements Node interface.
+func (n *FuncCallExpr) Restore(ctx *RestoreCtx) error {
+	ctx.WriteKeyWord(n.FnName.O)
+	ctx.WritePlain("(")
+	switch n.FnName.L {
+	case "convert":
+		if err := n.Args[0].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCastExpr.Expr")
+		}
+		ctx.WriteKeyWord(" USING ")
+		ctx.WriteKeyWord(n.Args[1].GetType().Charset)
+	case "adddate", "subdate", "date_add", "date_sub":
+		if err := n.Args[0].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[0]")
+		}
+		ctx.WritePlain(", ")
+		ctx.WriteKeyWord("INTERVAL ")
+		if err := n.Args[1].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[1]")
+		}
+		ctx.WritePlain(" ")
+		if err := n.Args[2].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[2]")
+		}
+	case "extract":
+		if err := n.Args[0].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[0]")
+		}
+		ctx.WriteKeyWord(" FROM ")
+		if err := n.Args[1].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[1]")
+		}
+	case "position":
+		if err := n.Args[0].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCallExpr")
+		}
+		ctx.WriteKeyWord(" IN ")
+		if err := n.Args[1].Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCallExpr")
+		}
+	case "trim":
+		switch len(n.Args) {
+		case 3:
+			if err := n.Args[2].Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[2]")
+			}
+			ctx.WritePlain(" ")
+			fallthrough
+		case 2:
+			if n.Args[1].(ValueExpr).GetValue() != nil {
+				if err := n.Args[1].Restore(ctx); err != nil {
+					return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[1]")
+				}
+				ctx.WritePlain(" ")
+			}
+			ctx.WriteKeyWord("FROM ")
+			fallthrough
+		case 1:
+			if err := n.Args[0].Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args[0]")
+			}
+		}
+	default:
+		for i, argv := range n.Args {
+			if i != 0 {
+				ctx.WritePlain(", ")
+			}
+			if err := argv.Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while restore FuncCallExpr.Args %d", i)
+			}
+		}
+	}
+	ctx.WritePlain(")")
+	return nil
 }
 
 // Format the ExprNode into a Writer.
@@ -347,12 +432,7 @@ func (n *FuncCallExpr) specialFormatArgs(w io.Writer) bool {
 		n.Args[0].Format(w)
 		fmt.Fprint(w, ", INTERVAL ")
 		n.Args[1].Format(w)
-		fmt.Fprintf(w, " %s", n.Args[2].(ValueExpr).GetDatumString())
-		return true
-	case TimestampAdd, TimestampDiff:
-		fmt.Fprintf(w, "%s, ", n.Args[0].(ValueExpr).GetDatumString())
-		n.Args[1].Format(w)
-		fmt.Fprint(w, ", ")
+		fmt.Fprint(w, " ")
 		n.Args[2].Format(w)
 		return true
 	}
@@ -396,6 +476,36 @@ type FuncCastExpr struct {
 	Tp *types.FieldType
 	// FunctionType is either Cast, Convert or Binary.
 	FunctionType CastFunctionType
+}
+
+// Restore implements Node interface.
+func (n *FuncCastExpr) Restore(ctx *RestoreCtx) error {
+	switch n.FunctionType {
+	case CastFunction:
+		ctx.WriteKeyWord("CAST")
+		ctx.WritePlain("(")
+		if err := n.Expr.Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCastExpr.Expr")
+		}
+		ctx.WriteKeyWord(" AS ")
+		n.Tp.RestoreAsCastType(ctx)
+		ctx.WritePlain(")")
+	case CastConvertFunction:
+		ctx.WriteKeyWord("CONVERT")
+		ctx.WritePlain("(")
+		if err := n.Expr.Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCastExpr.Expr")
+		}
+		ctx.WritePlain(", ")
+		n.Tp.RestoreAsCastType(ctx)
+		ctx.WritePlain(")")
+	case CastBinaryOperator:
+		ctx.WriteKeyWord("BINARY ")
+		if err := n.Expr.Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore FuncCastExpr.Expr")
+		}
+	}
+	return nil
 }
 
 // Format the ExprNode into a Writer.
@@ -448,6 +558,47 @@ const (
 	TrimTrailing
 )
 
+// String implements fmt.Stringer interface.
+func (direction TrimDirectionType) String() string {
+	switch direction {
+	case TrimBoth, TrimBothDefault:
+		return "BOTH"
+	case TrimLeading:
+		return "LEADING"
+	case TrimTrailing:
+		return "TRAILING"
+	default:
+		return ""
+	}
+}
+
+// TrimDirectionExpr is an expression representing the trim direction used in the TRIM() function.
+type TrimDirectionExpr struct {
+	exprNode
+	// Direction is the trim direction
+	Direction TrimDirectionType
+}
+
+// Restore implements Node interface.
+func (n *TrimDirectionExpr) Restore(ctx *RestoreCtx) error {
+	ctx.WriteKeyWord(n.Direction.String())
+	return nil
+}
+
+// Format the ExprNode into a Writer.
+func (n *TrimDirectionExpr) Format(w io.Writer) {
+	fmt.Fprint(w, n.Direction.String())
+}
+
+// Accept implements Node Accept interface.
+func (n *TrimDirectionExpr) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	return v.Leave(n)
+}
+
 // DateArithType is type for DateArith type.
 type DateArithType byte
 
@@ -483,6 +634,10 @@ const (
 	AggFuncBitXor = "bit_xor"
 	// AggFuncBitAnd is the name of bit_and function.
 	AggFuncBitAnd = "bit_and"
+	// AggFuncVarPop is the name of var_pop function
+	AggFuncVarPop = "var_pop"
+	// AggFuncVarSamp is the name of var_samp function
+	AggFuncVarSamp = "var_samp"
 	// AggFuncStddevPop is the name of stddev_pop function
 	AggFuncStddevPop = "stddev_pop"
 	// AggFuncStddevSamp is the name of stddev_samp function
@@ -500,6 +655,41 @@ type AggregateFuncExpr struct {
 	// For example, column c1 values are "1", "2", "2",  "sum(c1)" is "5",
 	// but "sum(distinct c1)" is "3".
 	Distinct bool
+}
+
+// Restore implements Node interface.
+func (n *AggregateFuncExpr) Restore(ctx *RestoreCtx) error {
+	ctx.WriteKeyWord(n.F)
+	ctx.WritePlain("(")
+	if n.Distinct {
+		ctx.WriteKeyWord("DISTINCT ")
+	}
+	switch strings.ToLower(n.F) {
+	case "group_concat":
+		for i := 0; i < len(n.Args)-1; i++ {
+			if i != 0 {
+				ctx.WritePlain(", ")
+			}
+			if err := n.Args[i].Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while restore AggregateFuncExpr.Args[%d]", i)
+			}
+		}
+		ctx.WriteKeyWord(" SEPARATOR ")
+		if err := n.Args[len(n.Args)-1].Restore(ctx); err != nil {
+			return errors.Annotate(err, "An error occurred while restore AggregateFuncExpr.Args SEPARATOR")
+		}
+	default:
+		for i, argv := range n.Args {
+			if i != 0 {
+				ctx.WritePlain(", ")
+			}
+			if err := argv.Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while restore AggregateFuncExpr.Args[%d]", i)
+			}
+		}
+	}
+	ctx.WritePlain(")")
+	return nil
 }
 
 // Format the ExprNode into a Writer.
@@ -570,6 +760,35 @@ type WindowFuncExpr struct {
 	Spec WindowSpec
 }
 
+// Restore implements Node interface.
+func (n *WindowFuncExpr) Restore(ctx *RestoreCtx) error {
+	ctx.WriteKeyWord(n.F)
+	ctx.WritePlain("(")
+	for i, v := range n.Args {
+		if i != 0 {
+			ctx.WritePlain(", ")
+		} else if n.Distinct {
+			ctx.WriteKeyWord("DISTINCT ")
+		}
+		if err := v.Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore WindowFuncExpr.Args[%d]", i)
+		}
+	}
+	ctx.WritePlain(")")
+	if n.FromLast {
+		ctx.WriteKeyWord(" FROM LAST")
+	}
+	if n.IgnoreNull {
+		ctx.WriteKeyWord(" IGNORE NULLS")
+	}
+	ctx.WriteKeyWord(" OVER ")
+	if err := n.Spec.Restore(ctx); err != nil {
+		return errors.Annotate(err, "An error occurred while restore WindowFuncExpr.Spec")
+	}
+
+	return nil
+}
+
 // Format formats the window function expression into a Writer.
 func (n *WindowFuncExpr) Format(w io.Writer) {
 	panic("Not implemented")
@@ -594,5 +813,181 @@ func (n *WindowFuncExpr) Accept(v Visitor) (Node, bool) {
 		return n, false
 	}
 	n.Spec = *node.(*WindowSpec)
+	return v.Leave(n)
+}
+
+// TimeUnitType is the type for time and timestamp units.
+type TimeUnitType int
+
+const (
+	// TimeUnitInvalid is a placeholder for an invalid time or timestamp unit
+	TimeUnitInvalid TimeUnitType = iota
+	// TimeUnitMicrosecond is the time or timestamp unit MICROSECOND.
+	TimeUnitMicrosecond
+	// TimeUnitSecond is the time or timestamp unit SECOND.
+	TimeUnitSecond
+	// TimeUnitMinute is the time or timestamp unit MINUTE.
+	TimeUnitMinute
+	// TimeUnitHour is the time or timestamp unit HOUR.
+	TimeUnitHour
+	// TimeUnitDay is the time or timestamp unit DAY.
+	TimeUnitDay
+	// TimeUnitWeek is the time or timestamp unit WEEK.
+	TimeUnitWeek
+	// TimeUnitMonth is the time or timestamp unit MONTH.
+	TimeUnitMonth
+	// TimeUnitQuarter is the time or timestamp unit QUARTER.
+	TimeUnitQuarter
+	// TimeUnitYear is the time or timestamp unit YEAR.
+	TimeUnitYear
+	// TimeUnitSecondMicrosecond is the time unit SECOND_MICROSECOND.
+	TimeUnitSecondMicrosecond
+	// TimeUnitMinuteMicrosecond is the time unit MINUTE_MICROSECOND.
+	TimeUnitMinuteMicrosecond
+	// TimeUnitMinuteSecond is the time unit MINUTE_SECOND.
+	TimeUnitMinuteSecond
+	// TimeUnitHourMicrosecond is the time unit HOUR_MICROSECOND.
+	TimeUnitHourMicrosecond
+	// TimeUnitHourSecond is the time unit HOUR_SECOND.
+	TimeUnitHourSecond
+	// TimeUnitHourMinute is the time unit HOUR_MINUTE.
+	TimeUnitHourMinute
+	// TimeUnitDayMicrosecond is the time unit DAY_MICROSECOND.
+	TimeUnitDayMicrosecond
+	// TimeUnitDaySecond is the time unit DAY_SECOND.
+	TimeUnitDaySecond
+	// TimeUnitDayMinute is the time unit DAY_MINUTE.
+	TimeUnitDayMinute
+	// TimeUnitDayHour is the time unit DAY_HOUR.
+	TimeUnitDayHour
+	// TimeUnitYearMonth is the time unit YEAR_MONTH.
+	TimeUnitYearMonth
+)
+
+// String implements fmt.Stringer interface.
+func (unit TimeUnitType) String() string {
+	switch unit {
+	case TimeUnitMicrosecond:
+		return "MICROSECOND"
+	case TimeUnitSecond:
+		return "SECOND"
+	case TimeUnitMinute:
+		return "MINUTE"
+	case TimeUnitHour:
+		return "HOUR"
+	case TimeUnitDay:
+		return "DAY"
+	case TimeUnitWeek:
+		return "WEEK"
+	case TimeUnitMonth:
+		return "MONTH"
+	case TimeUnitQuarter:
+		return "QUARTER"
+	case TimeUnitYear:
+		return "YEAR"
+	case TimeUnitSecondMicrosecond:
+		return "SECOND_MICROSECOND"
+	case TimeUnitMinuteMicrosecond:
+		return "MINUTE_MICROSECOND"
+	case TimeUnitMinuteSecond:
+		return "MINUTE_SECOND"
+	case TimeUnitHourMicrosecond:
+		return "HOUR_MICROSECOND"
+	case TimeUnitHourSecond:
+		return "HOUR_SECOND"
+	case TimeUnitHourMinute:
+		return "HOUR_MINUTE"
+	case TimeUnitDayMicrosecond:
+		return "DAY_MICROSECOND"
+	case TimeUnitDaySecond:
+		return "DAY_SECOND"
+	case TimeUnitDayMinute:
+		return "DAY_MINUTE"
+	case TimeUnitDayHour:
+		return "DAY_HOUR"
+	case TimeUnitYearMonth:
+		return "YEAR_MONTH"
+	default:
+		return ""
+	}
+}
+
+// TimeUnitExpr is an expression representing a time or timestamp unit.
+type TimeUnitExpr struct {
+	exprNode
+	// Unit is the time or timestamp unit.
+	Unit TimeUnitType
+}
+
+// Restore implements Node interface.
+func (n *TimeUnitExpr) Restore(ctx *RestoreCtx) error {
+	ctx.WriteKeyWord(n.Unit.String())
+	return nil
+}
+
+// Format the ExprNode into a Writer.
+func (n *TimeUnitExpr) Format(w io.Writer) {
+	fmt.Fprint(w, n.Unit.String())
+}
+
+// Accept implements Node Accept interface.
+func (n *TimeUnitExpr) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	return v.Leave(n)
+}
+
+// GetFormatSelectorType is the type for the first argument of GET_FORMAT() function.
+type GetFormatSelectorType int
+
+const (
+	// GetFormatSelectorDate is the GET_FORMAT selector DATE.
+	GetFormatSelectorDate GetFormatSelectorType = iota + 1
+	// GetFormatSelectorTime is the GET_FORMAT selector TIME.
+	GetFormatSelectorTime
+	// GetFormatSelectorDatetime is the GET_FORMAT selector DATETIME and TIMESTAMP.
+	GetFormatSelectorDatetime
+)
+
+// GetFormatSelectorExpr is an expression used as the first argument of GET_FORMAT() function.
+type GetFormatSelectorExpr struct {
+	exprNode
+	// Selector is the GET_FORMAT() selector.
+	Selector GetFormatSelectorType
+}
+
+// String implements fmt.Stringer interface.
+func (selector GetFormatSelectorType) String() string {
+	switch selector {
+	case GetFormatSelectorDate:
+		return "DATE"
+	case GetFormatSelectorTime:
+		return "TIME"
+	case GetFormatSelectorDatetime:
+		return "DATETIME"
+	default:
+		return ""
+	}
+}
+
+// Restore implements Node interface.
+func (n *GetFormatSelectorExpr) Restore(ctx *RestoreCtx) error {
+	ctx.WriteKeyWord(n.Selector.String())
+	return nil
+}
+
+// Format the ExprNode into a Writer.
+func (n *GetFormatSelectorExpr) Format(w io.Writer) {
+	fmt.Fprint(w, n.Selector.String())
+}
+
+// Accept implements Node Accept interface.
+func (n *GetFormatSelectorExpr) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
 	return v.Leave(n)
 }

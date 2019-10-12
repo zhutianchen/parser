@@ -14,6 +14,7 @@
 package charset
 
 import (
+	"math/rand"
 	"testing"
 
 	. "github.com/pingcap/check"
@@ -49,17 +50,23 @@ func (s *testCharsetSuite) TestValidCharset(c *C) {
 		{"utf8", "utf8_invalid_ci", false},
 		{"utf16", "utf16_bin", false},
 		{"gb2312", "gb2312_chinese_ci", false},
+		{"UTF8", "UTF8_BIN", true},
+		{"UTF8", "utf8_bin", true},
+		{"UTF8MB4", "utf8mb4_bin", true},
+		{"UTF8MB4", "UTF8MB4_bin", true},
+		{"UTF8MB4", "UTF8MB4_general_ci", true},
+		{"Utf8", "uTf8_bIN", true},
 	}
 	for _, tt := range tests {
 		testValidCharset(c, tt.cs, tt.co, tt.succ)
 	}
 }
 
-func (s *testCharsetSuite) TestGetAllCharsets(c *C) {
+func (s *testCharsetSuite) TestGetSupportedCharsets(c *C) {
 	defer testleak.AfterTest(c)()
 	charset := &Charset{"test", "test_bin", nil, "Test", 5}
 	charsetInfos = append(charsetInfos, charset)
-	descs := GetAllCharsets()
+	descs := GetSupportedCharsets()
 	c.Assert(len(descs), Equals, len(charsetInfos)-1)
 }
 
@@ -90,5 +97,85 @@ func (s *testCharsetSuite) TestGetDefaultCollation(c *C) {
 	}
 	for _, tt := range tests {
 		testGetDefaultCollation(c, tt.cs, tt.co, tt.succ)
+	}
+
+	// Test the consistency of collations table and charset desc table
+	charset_num := 0
+	for _, collate := range collations {
+		if collate.IsDefault {
+			if desc, ok := charsets[collate.CharsetName]; ok {
+				c.Assert(collate.Name, Equals, desc.DefaultCollation)
+				charset_num += 1
+			}
+		}
+	}
+	c.Assert(charset_num, Equals, len(charsets))
+}
+
+func (s *testCharsetSuite) TestSupportedCollations(c *C) {
+	// All supportedCollation are defined from their names
+	c.Assert(len(supportedCollationNames), Equals, len(supportedCollationNames))
+
+	// The default collations of supported charsets is the subset of supported collations
+	errMsg := "Charset [%v] is supported but its default collation [%v] is not."
+	for _, desc := range GetSupportedCharsets() {
+		found := false
+		for _, c := range GetSupportedCollations() {
+			if desc.DefaultCollation == c.Name {
+				found = true
+				break
+			}
+		}
+		c.Assert(found, IsTrue, Commentf(errMsg, desc.Name, desc.DefaultCollation))
+	}
+}
+
+func (s *testCharsetSuite) TestGetCharsetDesc(c *C) {
+	defer testleak.AfterTest(c)()
+	tests := []struct {
+		cs     string
+		result string
+		succ   bool
+	}{
+		{"utf8", "utf8", true},
+		{"UTF8", "utf8", true},
+		{"utf8mb4", "utf8mb4", true},
+		{"ascii", "ascii", true},
+		{"binary", "binary", true},
+		{"latin1", "latin1", true},
+		{"invalid_cs", "", false},
+		{"", "utf8_bin", false},
+	}
+	for _, tt := range tests {
+		desc, err := GetCharsetDesc(tt.cs)
+		if !tt.succ {
+			c.Assert(err, NotNil)
+		} else {
+			c.Assert(desc.Name, Equals, tt.result)
+		}
+	}
+}
+
+func (s *testCharsetSuite) TestGetCollationByName(c *C) {
+	defer testleak.AfterTest(c)()
+
+	for _, collation := range collations {
+		coll, err := GetCollationByName(collation.Name)
+		c.Assert(err, IsNil)
+		c.Assert(coll, Equals, collation)
+	}
+
+	_, err := GetCollationByName("non_exist")
+	c.Assert(err, ErrorMatches, "\\[ddl:1273\\]Unknown collation: 'non_exist'")
+}
+
+func BenchmarkGetCharsetDesc(b *testing.B) {
+	b.ResetTimer()
+	charsets := []string{CharsetUTF8, CharsetUTF8MB4, CharsetASCII, CharsetLatin1, CharsetBin}
+	index := rand.Intn(len(charsets))
+	cs := charsets[index]
+
+	for i := 0; i < b.N; i++ {
+		GetCharsetDesc(cs)
 	}
 }
