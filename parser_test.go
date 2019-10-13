@@ -2497,7 +2497,7 @@ func (s *testParserSuite) TestDDL(c *C) {
 		{"create table t (lv long varchar null)", true, "CREATE TABLE `t` (`lv` MEDIUMTEXT NULL)"},
 
 		// for stream
-		{"create stream s(a int, b timestamp) with ('type' = 'kafka', 'topic' = 'click');", true, "CREATE STREAM `s`(`a` INT, `b` TIMESTAMP) WITH ('type' = 'kafka', 'topic' = 'click');"},
+		{"create stream s(a int, b timestamp) with ('type' = 'kafka', 'topic' = 'click')", true, "CREATE STREAM `s` (`a` INT,`b` TIMESTAMP) WITH ('type' = 'kafka','topic' = 'click')"},
 		{"drop stream s", true, "DROP STREAM `s`"},
 
 		// special table name
@@ -4315,7 +4315,8 @@ func (s *testParserSuite) TestWindowFunctions(c *C) {
 		{`SELECT RANK() OVER (w1) FROM t WINDOW w1 AS (w2), w2 AS (), w3 AS (w1);`, true, "SELECT RANK() OVER (`w1`) FROM `t` WINDOW `w1` AS (`w2`),`w2` AS (),`w3` AS (`w1`)"},
 		{`SELECT RANK() OVER w1 FROM t WINDOW w1 AS (w2), w2 AS (w3), w3 AS (w1);`, true, "SELECT RANK() OVER `w1` FROM `t` WINDOW `w1` AS (`w2`),`w2` AS (`w3`),`w3` AS (`w1`)"},
 
-		{`SELECT COUNT(*) FROM st group by a window tumbling (size 5 SECOND);`, true, "SELECT COUNT(1) FROM `st` GROUP BY `a` WINDOW TUMBLING (SIZE 5 SECOND);"},
+		// For Stream Window
+		{`SELECT COUNT(*) FROM st group by a window tumbling (size 5 SECOND);`, true, "SELECT COUNT(1) FROM `st` GROUP BY `a` WINDOW TUMBLING (SIZE 5 SECOND)"},
 
 		// For tidb_parse_tso
 		{`select tidb_parse_tso(1)`, true, "SELECT TIDB_PARSE_TSO(1)"},

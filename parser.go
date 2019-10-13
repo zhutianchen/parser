@@ -13202,7 +13202,7 @@ yynewstate:
 			parser.yyVAL.item = &ast.StreamWindowSpec{
 				Type: ast.StreamWindowType(ast.Tumbling),
 				Size: getUint64FromNUM(yyS[yypt-2].item),
-				Unit: ast.NewValueExpr(yyS[yypt-1].item),
+				Unit: yyS[yypt-1].item.(ast.TimeUnitType),
 			}
 		}
 	case 1141:

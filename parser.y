@@ -6162,9 +6162,9 @@ WindowClauseOptional:
 |	"WINDOW" "TUMBLING" '(' "SIZE" intLit TimeUnit ')'
 	{
         $$ = &ast.StreamWindowSpec{
-            Type : ast.StreamWindowType(ast.Tumbling),
-            Size : getUint64FromNUM($5),
-            Unit: ast.NewValueExpr($6),
+            Type: ast.StreamWindowType(ast.Tumbling),
+            Size: getUint64FromNUM($5),
+            Unit:  $6.(ast.TimeUnitType),
         }
 	}
 

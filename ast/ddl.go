@@ -867,71 +867,6 @@ func (n *ColumnDef) Validate() bool {
 	return !(generatedCol && illegalOpt4gc)
 }
 
-// CreateStreamStmt is a statement to create a table.
-type CreateStreamStmt struct {
-	ddlNode
-
-	StreamName       *TableName
-	Cols             []*ColumnDef
-	StreamProperties []*StreamProperty
-}
-
-// Accept implements Node Accept interface.
-func (n *CreateStreamStmt) Accept(v Visitor) (Node, bool) {
-	newNode, skipChildren := v.Enter(n)
-	if skipChildren {
-		return v.Leave(newNode)
-	}
-	n = newNode.(*CreateStreamStmt)
-	node, ok := n.StreamName.Accept(v)
-	if !ok {
-		return n, false
-	}
-	n.StreamName = node.(*TableName)
-	for i, val := range n.Cols {
-		node, ok = val.Accept(v)
-		if !ok {
-			return n, false
-		}
-		n.Cols[i] = node.(*ColumnDef)
-	}
-	for i, val := range n.StreamProperties {
-		node, ok = val.Accept(v)
-		if !ok {
-			return n, false
-		}
-		n.StreamProperties[i] = node.(*StreamProperty)
-	}
-	return v.Leave(n)
-}
-
-// Restore implements Node interface.
-func (n *CreateStreamStmt) Restore(ctx *RestoreCtx) error {
-	ctx.WriteKeyWord("CREATE STREAM ")
-	ctx.WriteName(n.StreamName.Name.O)
-
-	// TODO: implement it.
-	return nil
-}
-
-type StreamProperty struct {
-	ddlNode
-	K string
-	V string
-}
-
-// Accept implements Node Accept interface.
-func (n *StreamProperty) Accept(v Visitor) (Node, bool) {
-	newNode, _ := v.Enter(n)
-	return v.Leave(newNode)
-}
-
-// Restore implements Node interface.
-func (n *StreamProperty) Restore(ctx *RestoreCtx) error {
-	// TODO: implement it.
-	return nil
-}
-
 // CreateTableStmt is a statement to create a table.
 // See https://dev.mysql.com/doc/refman/5.7/en/create-table.html
 type CreateTableStmt struct {
@@ -1074,6 +1009,108 @@ func (n *CreateTableStmt) Accept(v Visitor) (Node, bool) {
 	}
 
 	return v.Leave(n)
+}
+
+// CreateStreamStmt is a statement to create a table.
+type CreateStreamStmt struct {
+	ddlNode
+
+	StreamName       *TableName
+	Cols             []*ColumnDef
+	StreamProperties []*StreamProperty
+}
+
+// Accept implements Node Accept interface.
+func (n *CreateStreamStmt) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	n = newNode.(*CreateStreamStmt)
+	node, ok := n.StreamName.Accept(v)
+	if !ok {
+		return n, false
+	}
+	n.StreamName = node.(*TableName)
+	for i, val := range n.Cols {
+		node, ok = val.Accept(v)
+		if !ok {
+			return n, false
+		}
+		n.Cols[i] = node.(*ColumnDef)
+	}
+	for i, val := range n.StreamProperties {
+		node, ok = val.Accept(v)
+		if !ok {
+			return n, false
+		}
+		n.StreamProperties[i] = node.(*StreamProperty)
+	}
+	return v.Leave(n)
+}
+
+// Restore implements Node interface.
+func (n *CreateStreamStmt) Restore(ctx *RestoreCtx) error {
+	ctx.WriteKeyWord("CREATE STREAM ")
+	if err := n.StreamName.Restore(ctx); err != nil {
+		return errors.Annotate(err, "An error occurred while splicing CreateStreamStmt Table")
+	}
+	ctx.WritePlain(" ")
+
+	lenCols := len(n.Cols)
+	if lenCols > 0 {
+		ctx.WritePlain("(")
+		for i, col := range n.Cols {
+			if i > 0 {
+				ctx.WritePlain(",")
+			}
+			if err := col.Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while splicing CreateStreamStmt ColumnDef: [%v]", i)
+			}
+		}
+		ctx.WritePlain(")")
+	}
+
+	lenStreamProperties := len(n.StreamProperties)
+	if lenStreamProperties > 0 {
+		ctx.WriteKeyWord(" WITH ")
+		ctx.WritePlain("(")
+		for i, sp := range n.StreamProperties {
+			if i > 0 {
+				ctx.WritePlain(",")
+			}
+			if err := sp.Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while splicing CreateStreamStmt StreamProperties: [%v]", i)
+			}
+		}
+		ctx.WritePlain(")")
+	}
+
+	return nil
+}
+
+type StreamProperty struct {
+	ddlNode
+	K string
+	V string
+}
+
+// Accept implements Node Accept interface.
+func (n *StreamProperty) Accept(v Visitor) (Node, bool) {
+	newNode, _ := v.Enter(n)
+	return v.Leave(newNode)
+}
+
+// Restore implements Node interface.
+func (n *StreamProperty) Restore(ctx *RestoreCtx) error {
+	ctx.WritePlain("'")
+	ctx.WritePlain(n.K)
+	ctx.WritePlain("'")
+	ctx.WritePlain(" = ")
+	ctx.WritePlain("'")
+	ctx.WritePlain(n.V)
+	ctx.WritePlain("'")
+	return nil
 }
 
 // DropTableStmt is a statement to drop one or more tables.
