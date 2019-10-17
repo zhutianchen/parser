@@ -7771,7 +7771,7 @@ AdminStmt:
 			Tables: $5.([]*ast.TableName),
 		}
 	}
-|	"ADMIN" "TIDB" "INSPECTION"
+|	"ADMIN" "DO" "INSPECTION"
 	{
  		$$ = &ast.AdminStmt{
  			Tp: ast.AdminInspection,

@@ -638,7 +638,7 @@ func (s *testParserSuite) TestDMLStmt(c *C) {
 		{"DELETE t1, t2 FROM t1 INNER JOIN t2 INNER JOIN t3 WHERE t1.id=t2.id AND t2.id=t3.id order by t1.id;", false, ""},
 
 		// for admin
-		{"admin tidb inspection;", true, "ADMIN TIDB INSPECTION"},
+		{"admin do inspection;", true, "ADMIN DO INSPECTION"},
 		{"admin show ddl;", true, "ADMIN SHOW DDL"},
 		{"admin show ddl jobs;", true, "ADMIN SHOW DDL JOBS"},
 		{"admin show ddl jobs where id > 0;", true, "ADMIN SHOW DDL JOBS WHERE `id`>0"},

@@ -1626,7 +1626,7 @@ func (n *AdminStmt) Restore(ctx *RestoreCtx) error {
 			ctx.WritePlain(v)
 		}
 	case AdminInspection:
-		ctx.WriteKeyWord("TIDB INSPECTION")
+		ctx.WriteKeyWord("DO INSPECTION")
 	default:
 		return errors.New("Unsupported AdminStmt type")
 	}
