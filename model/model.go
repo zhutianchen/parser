@@ -234,6 +234,9 @@ type TableInfo struct {
 	StreamWinCol     string            `json:"streamWinCol"`
 	StreamProperties map[string]string `json:"streamProperties"`
 
+	IsInspection     bool              `json:"isInspection"`
+	InspectionInfo 	 map[string]string `json:"inspectionInfo"`
+
 	View *ViewInfo `json:"view"`
 	// Lock represent the table lock info.
 	Lock *TableLockInfo `json:"Lock"`
