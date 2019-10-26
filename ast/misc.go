@@ -1424,6 +1424,7 @@ const (
 	AdminReloadOptRuleBlacklist
 	AdminPluginDisable
 	AdminPluginEnable
+	AdminInspection
 )
 
 // HandleRange represents a range where handle value >= Begin and < End.
@@ -1624,6 +1625,8 @@ func (n *AdminStmt) Restore(ctx *RestoreCtx) error {
 			}
 			ctx.WritePlain(v)
 		}
+	case AdminInspection:
+		ctx.WriteKeyWord("DO INSPECTION")
 	default:
 		return errors.New("Unsupported AdminStmt type")
 	}

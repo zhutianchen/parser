@@ -867,6 +867,13 @@ func (n *SelectStmt) Restore(ctx *RestoreCtx) error {
 		}
 	}
 
+	if n.StreamWindowSpec != nil {
+		ctx.WriteKeyWord(" WINDOW ")
+		if err := n.StreamWindowSpec.Restore(ctx); err != nil {
+			return errors.Annotatef(err, "An error occurred while restore SelectStmt.StreamWindowSpec")
+		}
+	}
+
 	if n.OrderBy != nil {
 		ctx.WritePlain(" ")
 		if err := n.OrderBy.Restore(ctx); err != nil {
@@ -2175,45 +2182,6 @@ func (n *ShowStmt) Accept(v Visitor) (Node, bool) {
 	return v.Leave(n)
 }
 
-type StreamWindowSpec struct {
-	node
-	WinCol string
-	Type   StreamWindowType
-	Size   uint64
-	Unit   ExprNode
-}
-
-// Accept implements Node Accept interface.
-func (n *StreamWindowSpec) Accept(v Visitor) (Node, bool) {
-	newNode, skipChildren := v.Enter(n)
-	if skipChildren {
-		return v.Leave(newNode)
-	}
-	n = newNode.(*StreamWindowSpec)
-	if n.Unit != nil {
-		node, ok := n.Unit.Accept(v)
-		if !ok {
-			return n, false
-		}
-		n.Unit = node.(ExprNode)
-	}
-	return v.Leave(n)
-}
-
-// Restore implements Node interface.
-func (n *StreamWindowSpec) Restore(ctx *RestoreCtx) error {
-	return nil
-}
-
-// FrameType is the type of window function frame.
-type StreamWindowType int
-
-const (
-	Tumbling = iota
-	Hopping
-	Session
-)
-
 // WindowSpec is the specification of a window.
 type WindowSpec struct {
 	node
@@ -2301,6 +2269,55 @@ func (n *WindowSpec) Accept(v Visitor) (Node, bool) {
 		n.Frame = node.(*FrameClause)
 	}
 	return v.Leave(n)
+}
+
+// FrameType is the type of window function frame.
+type StreamWindowType int
+
+const (
+	Tumbling = iota
+	Hopping
+	Session
+)
+
+type StreamWindowSpec struct {
+	node
+	WinCol string
+	Type   StreamWindowType
+	Size   uint64
+	Unit   TimeUnitType
+}
+
+// Accept implements Node Accept interface.
+func (n *StreamWindowSpec) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	return v.Leave(n)
+}
+
+// Restore implements Node interface.
+func (n *StreamWindowSpec) Restore(ctx *RestoreCtx) error {
+	switch n.Type {
+	case Tumbling:
+		ctx.WriteKeyWord("TUMBLING")
+	case Hopping:
+		ctx.WriteKeyWord("HOPPING")
+	case Session:
+		ctx.WriteKeyWord("SESSION")
+	default:
+		return errors.New("Unsupported stream window function type")
+	}
+
+	ctx.WritePlain(" ")
+	ctx.WritePlain("(")
+	ctx.WriteKeyWord("SIZE")
+	ctx.WritePlainf(" %d ", n.Size)
+	ctx.WriteKeyWord(n.Unit.String())
+	ctx.WritePlain(")")
+
+	return nil
 }
 
 // PartitionByClause represents partition by clause.

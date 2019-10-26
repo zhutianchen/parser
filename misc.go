@@ -671,6 +671,7 @@ var tokenMap = map[string]int{
 	"TUMBLING":                 tumbling,
 	"HOPPING":                  hopping,
 	"SIZE":                     size,
+	"INSPECTION":               inspection,
 }
 
 // See https://dev.mysql.com/doc/refman/5.7/en/function-resolution.html for details
