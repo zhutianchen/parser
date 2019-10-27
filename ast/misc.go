@@ -1425,6 +1425,12 @@ const (
 	AdminPluginDisable
 	AdminPluginEnable
 	AdminInspection
+	AdminDiagnoseSlowQuery
+)
+
+const (
+	AdminDiagnoseSlowQueryStart = "start"
+	AdminDiagnoseSlowQueryStop  = "stop"
 )
 
 // HandleRange represents a range where handle value >= Begin and < End.
@@ -1502,6 +1508,7 @@ type AdminStmt struct {
 	ShowSlow     *ShowSlow
 	Plugins      []string
 	Where        ExprNode
+	Action       string
 }
 
 // Restore implements Node interface.
@@ -1627,6 +1634,13 @@ func (n *AdminStmt) Restore(ctx *RestoreCtx) error {
 		}
 	case AdminInspection:
 		ctx.WriteKeyWord("DO INSPECTION")
+	case AdminDiagnoseSlowQuery:
+		ctx.WriteKeyWord("DO DIAGNOSE SLOW QUERY ")
+		if n.Action == AdminDiagnoseSlowQueryStart {
+			ctx.WriteKeyWord("START")
+		} else if n.Action == AdminDiagnoseSlowQueryStop {
+			ctx.WriteKeyWord("STOP")
+		}
 	default:
 		return errors.New("Unsupported AdminStmt type")
 	}

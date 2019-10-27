@@ -672,6 +672,8 @@ var tokenMap = map[string]int{
 	"HOPPING":                  hopping,
 	"SIZE":                     size,
 	"INSPECTION":               inspection,
+	"DIAGNOSE":                 diagnose,
+	"STOP":                     stop,
 }
 
 // See https://dev.mysql.com/doc/refman/5.7/en/function-resolution.html for details
