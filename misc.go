@@ -672,7 +672,7 @@ var tokenMap = map[string]int{
 	"HOPPING":                  hopping,
 	"SIZE":                     size,
 	"INSPECTION":               inspection,
-	"DIAGNOSE":                 diagnose,
+	"DIAGNOSIS":                diagnosis,
 	"STOP":                     stop,
 }
 

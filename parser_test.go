@@ -639,6 +639,10 @@ func (s *testParserSuite) TestDMLStmt(c *C) {
 
 		// for admin
 		{"admin do inspection;", true, "ADMIN DO INSPECTION"},
+		{"admin do diagnosis slow query start;", true, "ADMIN DO DIAGNOSIS SLOW QUERY START"},
+		{"admin do diagnosis slow query stop;", true, "ADMIN DO DIAGNOSIS SLOW QUERY STOP"},
+		{"admin show diagnosis jobs;", true, "ADMIN SHOW DIAGNOSIS JOBS"},
+		{"admin do inspection;", true, "ADMIN DO INSPECTION"},
 		{"admin show ddl;", true, "ADMIN SHOW DDL"},
 		{"admin show ddl jobs;", true, "ADMIN SHOW DDL JOBS"},
 		{"admin show ddl jobs where id > 0;", true, "ADMIN SHOW DDL JOBS WHERE `id`>0"},

@@ -1431,6 +1431,7 @@ const (
 const (
 	AdminDiagnoseSlowQueryStart = "start"
 	AdminDiagnoseSlowQueryStop  = "stop"
+	AdminDiagnoseSlowQueryShow  = "show"
 )
 
 // HandleRange represents a range where handle value >= Begin and < End.
@@ -1635,11 +1636,12 @@ func (n *AdminStmt) Restore(ctx *RestoreCtx) error {
 	case AdminInspection:
 		ctx.WriteKeyWord("DO INSPECTION")
 	case AdminDiagnoseSlowQuery:
-		ctx.WriteKeyWord("DO DIAGNOSE SLOW QUERY ")
 		if n.Action == AdminDiagnoseSlowQueryStart {
-			ctx.WriteKeyWord("START")
+			ctx.WriteKeyWord("DO DIAGNOSIS SLOW QUERY START")
 		} else if n.Action == AdminDiagnoseSlowQueryStop {
-			ctx.WriteKeyWord("STOP")
+			ctx.WriteKeyWord("DO DIAGNOSIS SLOW QUERY STOP")
+		} else if n.Action == AdminDiagnoseSlowQueryShow {
+			ctx.WriteKeyWord("SHOW DIAGNOSIS JOBS")
 		}
 	default:
 		return errors.New("Unsupported AdminStmt type")
