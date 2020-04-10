@@ -209,6 +209,44 @@ func (s *testParserSuite) TestSimple(c *C) {
 	_, err = parser.ParseOneStmt(src, "", "")
 	c.Assert(err, IsNil)
 
+	// For limao && junhua
+	// See: http://tapd.oa.com/10100471/bugtrace/bugs/view?bug_id=1010100471078135423 for details
+	src = "CREATE TABLE t38 (c1 CHAR(20) CHARACTER SET gbk);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t39 (c1 CHAR(20) CHARACTER SET gbk COLLATE gbk_bin);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t219 (c1 TEXT CHARACTER SET gbk COLLATE gbk_chinese_ci)DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t218 (c1 TEXT CHARACTER SET gbk)DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t211 (c1 TINYTEXT CHARACTER SET gbk COLLATE gbk_chinese_ci)DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t210 (c1 TINYTEXT CHARACTER SET gbk)DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t203 (c1 VARCHAR(20) CHARACTER SET gbk COLLATE gbk_chinese_ci)DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t197 (c1 CHAR(20) CHARACTER SET gbk COLLATE gbk_bin) DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE t196 (c1 CHAR(20) CHARACTER SET gbk) DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
 	// for #7371, support NATIONAL CHARACTER
 	// reference link: https://dev.mysql.com/doc/refman/5.7/en/charset-national.html
 	src = "CREATE TABLE t(c1 NATIONAL CHARACTER(10));"
