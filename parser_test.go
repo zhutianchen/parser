@@ -225,6 +225,30 @@ func (s *testParserSuite) TestSimple(c *C) {
 	_, err = parser.ParseOneStmt(src, "", "")
 	c.Assert(err, IsNil)
 
+	src = "create table point ( a point);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "create table linestring ( a linestring);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "create table polygon ( a polygon);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "create table multipoint( a multipoint);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "create table multilinestring ( a multilinestring not null);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "create table GEOMETRYCOLLECTION ( a GEOMETRYCOLLECTION);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
 	src = "CREATE TABLE t39 (c1 CHAR(20) CHARACTER SET gbk COLLATE gbk_bin);"
 	_, err = parser.ParseOneStmt(src, "", "")
 	c.Assert(err, IsNil)
