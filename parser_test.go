@@ -237,6 +237,10 @@ func (s *testParserSuite) TestSimple(c *C) {
 	_, err = parser.ParseOneStmt(src, "", "")
 	c.Assert(err, IsNil)
 
+	src = "alter table polygon add column polygon polygont;"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
 	src = "create table multipoint( a multipoint);"
 	_, err = parser.ParseOneStmt(src, "", "")
 	c.Assert(err, IsNil)
