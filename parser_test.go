@@ -215,6 +215,16 @@ func (s *testParserSuite) TestSimple(c *C) {
 	_, err = parser.ParseOneStmt(src, "", "")
 	c.Assert(err, IsNil)
 
+	// For limao && junhua
+	// Support geometry type in ddl
+	src = "CREATE TABLE t39 (c1 GEOMETRY);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
+	src = "CREATE TABLE GEOMETRY (c1 GEOMETRY);"
+	_, err = parser.ParseOneStmt(src, "", "")
+	c.Assert(err, IsNil)
+
 	src = "CREATE TABLE t39 (c1 CHAR(20) CHARACTER SET gbk COLLATE gbk_bin);"
 	_, err = parser.ParseOneStmt(src, "", "")
 	c.Assert(err, IsNil)
