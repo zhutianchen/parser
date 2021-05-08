@@ -5148,3 +5148,15 @@ func (s *testParserSuite) TestBRIE(c *C) {
 
 	s.RunTest(c, table)
 }
+
+// For `PARTITION BY [LINEAR] KEY ALGORITHM` syntax
+func (s *testParserSuite) TestPartitionKeyAlgorithm(c *C) {
+	table := []testCase{
+		{"CREATE TABLE t492  (c1 integer ,c2 integer) PARTITION BY LINEAR KEY ALGORITHM = 1 (c1,c2) PARTITIONS 4", true, "CREATE TABLE `t492` (`c1` INT,`c2` INT) PARTITION BY LINEAR KEY ALGORITHM = 1 (`c1`,`c2`) PARTITIONS 4"},
+		{"CREATE TABLE t492  (c1 integer ,c2 integer) PARTITION BY LINEAR KEY ALGORITHM = -1 (c1,c2) PARTITIONS 4", false, ""},
+		{"CREATE TABLE t492  (c1 integer ,c2 integer) PARTITION BY LINEAR KEY ALGORITHM = 0 (c1,c2) PARTITIONS 4", false, ""},
+		{"CREATE TABLE t492  (c1 integer ,c2 integer) PARTITION BY LINEAR KEY ALGORITHM = 3 (c1,c2) PARTITIONS 4", false, ""},
+	}
+
+	s.RunTest(c, table)
+}
