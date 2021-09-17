@@ -5160,3 +5160,15 @@ func (s *testParserSuite) TestPartitionKeyAlgorithm(c *C) {
 
 	s.RunTest(c, table)
 }
+
+// For SPATIAL INDEX DEFINITION  in `CREATE TABLE ` statement
+func (s *testParserSuite) TestSpatialIndex(c *C) {
+	table := []testCase{
+		{"CREATE TABLE `footmarks_bak`  (\n" +
+			"  `gis` geometry NOT NULL COMMENT '位置信息',\n" +
+			" SPATIAL INDEX `idx_gis`(`gis`)\n " +
+			")",
+			true, "CREATE TABLE `footmarks_bak` (`gis` GEOMETRY NOT NULL COMMENT '位置信息',SPATIAL `idx_gis`(`gis`))"},
+	}
+	s.RunTest(c, table)
+}
