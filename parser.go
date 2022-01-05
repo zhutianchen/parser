@@ -10287,8 +10287,6 @@ yynewstate:
 				Tp:         ast.AlterTableAlterCheck,
 				Constraint: c,
 			}
-			yylex.AppendError(yylex.Errorf("The ALTER CHECK clause is parsed but not implemented yet."))
-			parser.lastErrorAsWarn()
 		}
 	case 56:
 		{
@@ -10300,8 +10298,6 @@ yynewstate:
 				Tp:         ast.AlterTableDropCheck,
 				Constraint: c,
 			}
-			yylex.AppendError(yylex.Errorf("The DROP CHECK clause is parsed but not implemented yet."))
-			parser.lastErrorAsWarn()
 		}
 	case 57:
 		{
@@ -10909,6 +10905,10 @@ yynewstate:
 				Expr:     yyS[yypt-2].expr,
 				Enforced: true,
 			}
+			// Keep the column type check constraint name.
+			if yyS[yypt-5].item != nil {
+				optionCheck.ConstraintName = yyS[yypt-5].item.(string)
+			}
 			switch yyS[yypt-0].item.(int) {
 			case 0:
 				parser.yyVAL.item = []*ast.ColumnOption{optionCheck, {Tp: ast.ColumnOptionNotNull}}
@@ -10920,8 +10920,6 @@ yynewstate:
 				parser.yyVAL.item = optionCheck
 			default:
 			}
-			yylex.AppendError(yylex.Errorf("The CHECK clause is parsed but ignored by all storage engines."))
-			parser.lastErrorAsWarn()
 		}
 	case 184:
 		{
@@ -11105,8 +11103,6 @@ yynewstate:
 				Expr:     yyS[yypt-2].expr.(ast.ExprNode),
 				Enforced: yyS[yypt-0].item.(bool),
 			}
-			yylex.AppendError(yylex.Errorf("The CHECK clause is parsed but ignored by all storage engines."))
-			parser.lastErrorAsWarn()
 		}
 	case 212:
 		{
