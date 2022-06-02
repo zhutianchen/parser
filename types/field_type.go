@@ -63,8 +63,9 @@ func (ft *FieldType) Equal(other *FieldType) bool {
 	// When Tp is float or double with Decimal unspecified, do not check whether Flen is equal,
 	// because Flen for them is useless.
 	// The Decimal field can be ignored if the type is int or string.
+	// When Tp is tiny or short or int24 or long or longlong, do not check whether Flen is equal
 	tpEqual := (ft.Tp == other.Tp) || (ft.Tp == mysql.TypeVarchar && other.Tp == mysql.TypeVarString) || (ft.Tp == mysql.TypeVarString && other.Tp == mysql.TypeVarchar)
-	flenEqual := ft.Flen == other.Flen || (ft.EvalType() == ETReal && ft.Decimal == UnspecifiedLength)
+	flenEqual := ft.Flen == other.Flen || (ft.EvalType() == ETReal && ft.Decimal == UnspecifiedLength) || (ft.Tp == mysql.TypeTiny || ft.Tp == mysql.TypeShort || ft.Tp == mysql.TypeInt24 || ft.Tp == mysql.TypeLong || ft.Tp == mysql.TypeLonglong)
 	ignoreDecimal := ft.EvalType() == ETInt || ft.EvalType() == ETString
 	partialEqual := tpEqual &&
 		(ignoreDecimal || ft.Decimal == other.Decimal) &&
