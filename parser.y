@@ -2571,6 +2571,10 @@ ColumnOption:
 	{
 		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionDefaultValue, Expr: $2}
 	}
+|	"DEFAULT" '(' Expression ')'
+	{
+		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionDefaultValue, Expr: $3}
+	}
 |	"SERIAL" "DEFAULT" "VALUE"
 	{
 		$$ = []*ast.ColumnOption{{Tp: ast.ColumnOptionNotNull}, {Tp: ast.ColumnOptionAutoIncrement}, {Tp: ast.ColumnOptionUniqKey}}
